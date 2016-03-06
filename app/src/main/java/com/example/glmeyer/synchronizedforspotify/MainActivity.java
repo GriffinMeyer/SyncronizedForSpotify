@@ -8,6 +8,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+
+import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
@@ -17,14 +19,19 @@ import com.spotify.sdk.android.player.ConnectionStateCallback;
 import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.PlayerNotificationCallback;
 import com.spotify.sdk.android.player.PlayerState;
+import com.google.android.youtube.player.YouTubeBaseActivity;
+import com.google.android.youtube.player.YouTubePlayer;
+import com.google.android.youtube.player.YouTubePlayerFragment;
 
 public class MainActivity extends Activity implements
-        PlayerNotificationCallback, ConnectionStateCallback {
+        PlayerNotificationCallback, ConnectionStateCallback, YouTubePlayer.OnInitializedListener {
     private final static int REQUEST_ENABLE_BT = 1;
     // TODO: Replace with your client ID
     private static final String CLIENT_ID = "90eb86d7dd924772994f5134d9eb6cab";
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "http://griffinmeyer.com/callback/";
+
+    private static final String YOUTUBE_API = "AIzaSyBSIIxLZXwEKVsy9XrlaeS5fs25yvBDlYY";
 
     private Player mPlayer;
     // Request code that will be used to verify if the result comes from correct activity
@@ -36,10 +43,13 @@ public class MainActivity extends Activity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        YouTubePlayerFragment youTubePlayerFragment = (YouTubePlayerFragment) getFragmentManager().findFragmentById(R.id.youtube_fragment);
+        youTubePlayerFragment.initialize(YOUTUBE_API,this);
+
         AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
                 AuthenticationResponse.Type.TOKEN,
                 REDIRECT_URI);
-        builder.setScopes(new String[]{"user-read-private", "streaming"});
+        builder.setScopes(new String[]{"user-read-private", "playlist-read","playlist-read-private", "streaming"});
         AuthenticationRequest request = builder.build();
 
         AuthenticationClient.openLoginActivity(this, REQUEST_CODE, request);
@@ -47,25 +57,27 @@ public class MainActivity extends Activity implements
         mBluetooth = BluetoothAdapter.getDefaultAdapter();
         if(mBluetooth == null){
             //No bluetooth support
-        }
-        if(!mBluetooth.isEnabled()){
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }else if(mBluetooth != null) {
+            if (!mBluetooth.isEnabled()) {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            }
         }
     }
-
+String token = "";
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
 
         // Check if result comes from the correct activity
         if (requestCode == REQUEST_CODE) {
-            AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, intent);
+            final AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, intent);
             if (response.getType() == AuthenticationResponse.Type.TOKEN) {
                 Config playerConfig = new Config(this, response.getAccessToken(), CLIENT_ID);
                 Spotify.getPlayer(playerConfig, this, new Player.InitializationObserver() {
                     @Override
                     public void onInitialized(Player player) {
+                        token = response.getAccessToken();
                         mPlayer = player;
                         mPlayer.addConnectionStateCallback(MainActivity.this);
                         mPlayer.addPlayerNotificationCallback(MainActivity.this);
@@ -90,6 +102,7 @@ public class MainActivity extends Activity implements
         mPlayer.play("spotify:track:6NsRMcD9MBp9sYXtcnJSGK");
     }
     boolean paused = false;
+
     public void pauseSong(View v){
         if (paused == true){
             mPlayer.resume();
@@ -98,6 +111,11 @@ public class MainActivity extends Activity implements
             mPlayer.pause();
             paused = true;
         }
+    }
+
+    public void showAuth(View v){
+        Log.d("SPOTYLOG", token);
+
     }
 
     @Override
@@ -150,5 +168,18 @@ public class MainActivity extends Activity implements
     protected void onDestroy() {
         Spotify.destroyPlayer(this);
         super.onDestroy();
+    }
+
+    @Override
+    public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer youTubePlayer, boolean b) {
+        if(!b){
+            youTubePlayer.cueVideo("nCgQDjiotG0");
+        }
+    }
+
+
+    @Override
+    public void onInitializationFailure(YouTubePlayer.Provider provider, YouTubeInitializationResult youTubeInitializationResult) {
+
     }
 }

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/SynchronizedforSpotify.iml" filepath="$PROJECT_DIR$/SynchronizedforSpotify.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SyncronizedForSpotify.iml" filepath="$PROJECT_DIR$/SyncronizedForSpotify.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
