@@ -1,12 +1,13 @@
 
 package com.example.glmeyer.synchronizedforspotify;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class Tracks {
+public class Tracks implements Serializable{
 
     @SerializedName("href")
     @Expose

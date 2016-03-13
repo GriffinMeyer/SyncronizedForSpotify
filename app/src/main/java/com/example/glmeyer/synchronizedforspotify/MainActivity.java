@@ -27,6 +27,9 @@ import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.PlayerNotificationCallback;
 import com.spotify.sdk.android.player.PlayerState;
 import com.squareup.picasso.Picasso;
+import android.media.audiofx.*;
+
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,8 +73,8 @@ public class MainActivity extends Activity implements
         AuthenticationRequest request = builder.build();
 
         AuthenticationClient.openLoginActivity(this, REQUEST_CODE, request);
-        ImageView img = (ImageView)findViewById(R.id.imageView);
-        Picasso.with(this).load("https://i.scdn.co/image/941a834a4e4e9ef191883ac25c5fecf4960573c4").into(img);
+        //ImageView img = (ImageView)findViewById(R.id.imageView);
+        //Picasso.with(this).load("https://i.scdn.co/image/941a834a4e4e9ef191883ac25c5fecf4960573c4").into(img);
         final EditText search = (EditText)findViewById(R.id.searchbar);
         search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -125,7 +128,7 @@ BluetoothDevice remoteDiv = null;
         EditText et = (EditText)findViewById(R.id.searchbar);
         String searchText = et.getText().toString();
         intent.putExtra("searchText", searchText);
-        startActivity(intent);
+        startActivityForResult(intent, 1);
     }
 
 String token = "";
@@ -156,6 +159,23 @@ String token = "";
                 });
             }
         }
+
+        if(requestCode == 1){
+            if(resultCode == Activity.RESULT_OK) {
+                Item returnedItem = (Item) intent.getSerializableExtra("item");
+                mPlayer.play(returnedItem.uri);
+                //String albumURL = intent.getStringExtra("albumURL");
+                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
+                TextView title = (TextView) findViewById(R.id.mainTitle);
+                TextView artist = (TextView) findViewById(R.id.mainArtist);
+                Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
+                btn.setImageResource(R.drawable.pausebutton);
+                title.setText(returnedItem.name);
+                artist.setText(returnedItem.artists.get(0).name);
+                songStarted = true;
+            }
+        }
     }
 
     public void logOut(View v){
@@ -174,6 +194,8 @@ String token = "";
             ImageButton btn = (ImageButton) findViewById(R.id.playButton);
             btn.setImageResource(R.drawable.pausebutton);
             mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
+            //BassBoost booster = new BassBoost(0,0);
+            //booster.setEnabled(true);
 
         } else if(songStarted){
 

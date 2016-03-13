@@ -1,8 +1,11 @@
 package com.example.glmeyer.synchronizedforspotify;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Message;
+import android.provider.SyncStateContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,10 +13,14 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.squareup.picasso.Picasso;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -60,8 +67,13 @@ public class Search extends AppCompatActivity {
             } else {
                 newView = (LinearLayout) convertView;
             }
+            TextView songArtist = (TextView) newView.findViewById(R.id.songArtist);
             TextView songTitle = (TextView) newView.findViewById(R.id.songTitle);
+            ImageView albumArt = (ImageView) newView.findViewById(R.id.albumart);
             songTitle.setText(w.name);
+            songArtist.setText(w.artists.get(0).name);
+            Picasso.with(context).load(w.album.images.get(2).url).into(albumArt);
+
 
             return newView;
         }
@@ -123,7 +135,19 @@ public class Search extends AppCompatActivity {
 
             }
         });
+        songListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Item item = myAdapter.getItem(position);
+                Log.d("TestClick: ", item.artists.get(0).name);
+                Intent returnIntent = new Intent();
+                returnIntent.putExtra("item", item);
+                setResult(Activity.RESULT_OK, returnIntent);
+                finish();
+            }
+        });
     }
+
     public interface spotifyService{
         @GET("v1/search")
         Call<SpotifySearch> searchSong(@Query("q") String query,
