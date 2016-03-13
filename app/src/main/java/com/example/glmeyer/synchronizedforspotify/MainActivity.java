@@ -6,13 +6,15 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
-import android.media.Image;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
@@ -24,13 +26,11 @@ import com.spotify.sdk.android.player.ConnectionStateCallback;
 import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.PlayerNotificationCallback;
 import com.spotify.sdk.android.player.PlayerState;
-
-import org.json.JSONObject;
+import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -66,10 +66,23 @@ public class MainActivity extends Activity implements
         AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
                 AuthenticationResponse.Type.TOKEN,
                 REDIRECT_URI);
-        builder.setScopes(new String[]{"user-read-private", "playlist-read","playlist-read-private", "streaming"});
+        builder.setScopes(new String[]{"user-read-private", "playlist-read", "playlist-read-private", "streaming"});
         AuthenticationRequest request = builder.build();
 
         AuthenticationClient.openLoginActivity(this, REQUEST_CODE, request);
+        ImageView img = (ImageView)findViewById(R.id.imageView);
+        Picasso.with(this).load("https://i.scdn.co/image/941a834a4e4e9ef191883ac25c5fecf4960573c4").into(img);
+        final EditText search = (EditText)findViewById(R.id.searchbar);
+        search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if(actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    search(v);
+                    return true;
+                }
+                return false;
+            }
+        });
 
 
         mBluetooth = BluetoothAdapter.getDefaultAdapter();
@@ -104,6 +117,15 @@ BluetoothDevice remoteDiv = null;
         Thread thread = new Thread(connectThread);
         thread.start();
 
+    }
+
+
+    public void search(View v){
+        Intent intent = new Intent(this, Search.class);
+        EditText et = (EditText)findViewById(R.id.searchbar);
+        String searchText = et.getText().toString();
+        intent.putExtra("searchText", searchText);
+        startActivity(intent);
     }
 
 String token = "";

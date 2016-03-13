@@ -3,8 +3,9 @@
     package="com.example.glmeyer.synchronizedforspotify">
 
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -21,7 +22,8 @@
         <!-- Needed for LoginActivity to work -->
         <activity
             android:name="com.spotify.sdk.android.authentication.LoginActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity android:name=".Search"></activity>
     </application>
 
 </manifest>
