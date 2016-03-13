@@ -6,33 +6,40 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 
-import com.google.android.youtube.player.YouTubeInitializationResult;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import com.spotify.sdk.android.player.Config;
+import com.spotify.sdk.android.player.PlayerStateCallback;
 import com.spotify.sdk.android.player.Spotify;
 import com.spotify.sdk.android.player.ConnectionStateCallback;
 import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.PlayerNotificationCallback;
 import com.spotify.sdk.android.player.PlayerState;
-import com.google.android.youtube.player.YouTubeBaseActivity;
-import com.google.android.youtube.player.YouTubePlayer;
-import com.google.android.youtube.player.YouTubePlayerFragment;
+
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Scanner;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 public class MainActivity extends Activity implements
-        PlayerNotificationCallback, ConnectionStateCallback, YouTubePlayer.OnInitializedListener {
+        PlayerNotificationCallback, ConnectionStateCallback{
 
+    private static final int MESSAGE_READ = 1;
     boolean paused = false;
     private final static int REQUEST_ENABLE_BT = 1;
     // TODO: Replace with your client ID
@@ -40,23 +47,21 @@ public class MainActivity extends Activity implements
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "http://griffinmeyer.com/callback/";
 
-    private static final String YOUTUBE_API = "AIzaSyBSIIxLZXwEKVsy9XrlaeS5fs25yvBDlYY";
 
     private static final UUID MY_UUID = UUID.fromString("5a6a493f-6feb-4145-8853-4593aa1b4f1c");
 
     private Player mPlayer;
     // Request code that will be used to verify if the result comes from correct activity
-// Can be any integer
+    // Can be any integer
     private static final int REQUEST_CODE = 1337;
     BluetoothAdapter mBluetooth;
     BluetoothDevice global;
+    private android.os.Handler mHandler;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        YouTubePlayerFragment youTubePlayerFragment = (YouTubePlayerFragment) getFragmentManager().findFragmentById(R.id.youtube_fragment);
-        youTubePlayerFragment.initialize(YOUTUBE_API, this);
 
         AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
                 AuthenticationResponse.Type.TOKEN,
@@ -65,6 +70,7 @@ public class MainActivity extends Activity implements
         AuthenticationRequest request = builder.build();
 
         AuthenticationClient.openLoginActivity(this, REQUEST_CODE, request);
+
 
         mBluetooth = BluetoothAdapter.getDefaultAdapter();
         if(mBluetooth == null){
@@ -137,9 +143,63 @@ String token = "";
         thread.start();
     }
 
+    PlayerStateCallback playerStateCallback;
+    PlayerState playerState;
+    boolean songStarted = false;
+    public void playButton(View v) {
+        if (!songStarted) {
+            songStarted = true;
+            ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+            btn.setImageResource(R.drawable.pausebutton);
+            mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
+
+        } else if(songStarted){
+
+            mPlayer.getPlayerState(new PlayerStateCallback() {
+                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+
+                @Override
+                public void onPlayerState(PlayerState playerState) {
+                    if (playerState.playing) {
+                        btn.setImageResource(R.drawable.playbutton);
+                        mPlayer.pause();
+                    }
+                    if (!playerState.playing) {
+                        btn.setImageResource(R.drawable.pausebutton);
+                        mPlayer.resume();
+                    }
+                }
+            });
+
+        /*
+        if(!songStarted){
+            mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
+            songStarted = true;
+        }else if(songStarted) {
+
+
+
+            mPlayer.getPlayerState(playerStateCallback);
+            playerStateCallback.onPlayerState(playerState);
+
+
+            if (playerState.playing) {
+                btn.setImageResource(R.drawable.pausebutton);
+                mPlayer.pause();
+            }
+            if (!playerState.playing) {
+                btn.setImageResource(R.drawable.playbutton);
+                mPlayer.resume();
+            }*/
+        }
+    }
+
+
     public void playSong(View v){
         //EditText et = (EditText)findViewById(R.id.editText);
+        ImageButton btn = (ImageButton)findViewById(R.id.playButton);
         mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
+        btn.setImageResource(R.drawable.pausebutton);
         paused = false;
     }
 
@@ -209,30 +269,58 @@ String token = "";
         Spotify.destroyPlayer(this);
         super.onDestroy();
     }
-    YouTubePlayer globalPlayer;
 
-    @Override
-    public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer youTubePlayer, boolean b) {
-        if(!b){
-            youTubePlayer.cueVideo("nCgQDjiotG0");
-            globalPlayer = youTubePlayer;
+
+    boolean pinged = false;
+long currentTime;
+    long testLatency(){
+            pinged = false;
+            currentTime = System.currentTimeMillis();
+            connectedThread.write("ping".getBytes());
+            while (pinged == false) {
+
+            }
+        if(((System.currentTimeMillis()-currentTime) / 2) > 10){
+            return  testLatency();
+        }else {
+            Log.d("Latency: ", String.valueOf((System.currentTimeMillis() - currentTime) / 2));
+            return ((System.currentTimeMillis() - currentTime) / 2);
         }
     }
-
     public void playVideo(View v){
-        globalPlayer.play();
+        byte[] outPut = "play".getBytes();
+        long delay = testLatency();
+        //long delay2 = testLatency();
+        //long avgDelay = (delay+delay2)/2;
+        connectedThread.write(outPut);
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                mPlayer.play("spotify:track:6HTJZ0TQJVMSKkUGzAOe2h");
+                paused = false;
+            }
+        },delay);
+
+    }
+String output = "";
+    public void readSocket(View v){
+        Log.d("Socket Output", "Here it comes");
+        Log.d("Socket Output",output);
     }
 
-
-    @Override
-    public void onInitializationFailure(YouTubePlayer.Provider provider, YouTubeInitializationResult youTubeInitializationResult) {
-
-    }
-
+    ConnectedThread connectedThread;
     void printSocket(BluetoothSocket s){
         Log.d("Socket: ", s.toString());
+        connectedThread = new ConnectedThread(s);
+        Thread thread = new Thread(connectedThread);
+        thread.start();
+        byte[] test = "Mama Mia".getBytes();
+        connectedThread.write(test);
         mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
+        paused = false;
     }
+
 
 
     private class AcceptThread implements Runnable {
@@ -319,6 +407,76 @@ String token = "";
         }
 
         /** Will cancel an in-progress connection, and close the socket */
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
+        }
+    }
+
+    private class ConnectedThread implements Runnable {
+        private final BluetoothSocket mmSocket;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
+
+        public ConnectedThread(BluetoothSocket socket) {
+            mmSocket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            // Get the input and output streams, using temp objects because
+            // member streams are final
+            try {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e) { }
+
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+        }
+
+        public void run() {
+            byte[] buffer = new byte[1024];  // buffer store for the stream
+            int bytes; // bytes returned from read()
+
+            // Keep listening to the InputStream until an exception occurs
+            while (true) {
+                try {
+                    // Read from the InputStream
+                    bytes = mmInStream.read(buffer);
+                    // Send the obtained bytes to the UI activity
+                    String readMessage = new String(buffer, 0, bytes);
+                    output = readMessage;
+                    if(readMessage.equals("play")){
+                        mPlayer.pause();
+                        mPlayer.play("spotify:track:6HTJZ0TQJVMSKkUGzAOe2h");
+                        paused = false;
+                    }
+                    if(readMessage.equals("ping")){
+                        connectedThread.write("pong".getBytes());
+                    }
+                    if(readMessage.equals("pong")){
+                        pinged = true;
+                    }
+                    Log.d("READING MESSAGE", readMessage);
+                    /*
+
+                    mHandler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
+                            .sendToTarget();*/
+                } catch (IOException e) {
+                    break;
+                }
+            }
+        }
+
+        /* Call this from the main activity to send data to the remote device */
+        public void write(byte[] bytes) {
+            try {
+                mmOutStream.write(bytes);
+            } catch (IOException e) { }
+        }
+
+        /* Call this from the main activity to shutdown the connection */
         public void cancel() {
             try {
                 mmSocket.close();
