@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:src="@drawable/playbutton"
         android:id="@+id/playButton"
-        android:onClick="playButton"
+        android:onClick="onClick"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="30dp" />
@@ -175,5 +175,15 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
+
+    <SeekBar
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/seekBar"
+        android:secondaryProgress="0"
+        android:nestedScrollingEnabled="false"
+        android:layout_below="@+id/mainArtist"
+        android:layout_alignLeft="@+id/bluetoothbutton"
+        android:layout_alignStart="@+id/bluetoothbutton" />
 
 </RelativeLayout>

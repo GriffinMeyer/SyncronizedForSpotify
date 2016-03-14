@@ -22,6 +22,9 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.os.Handler;
+import android.view.View.OnClickListener;
+
 
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
@@ -50,7 +53,7 @@ import java.util.TimerTask;
 import java.util.UUID;
 
 public class MainActivity extends Activity implements
-        PlayerNotificationCallback, ConnectionStateCallback{
+        PlayerNotificationCallback, ConnectionStateCallback, OnClickListener{
 
     private static final int MESSAGE_READ = 1;
     boolean paused = false;
@@ -80,9 +83,10 @@ public class MainActivity extends Activity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        currValue = myAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        //currValue = myAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getInit();
         myAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         muted = false;
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -214,6 +218,63 @@ public class MainActivity extends Activity implements
         }
     }
 
+    int songMax;
+    int songPos;
+
+    ImageButton play_button;
+    Handler seekHandler = new Handler();
+    SeekBar seekBar;
+
+    public void getInit() {
+        seekBar = (SeekBar) findViewById(R.id.seekBar);
+        play_button = (ImageButton) findViewById(R.id.playButton);
+        play_button.setOnClickListener(this);
+    }
+
+    Runnable run = new Runnable() {
+
+        @Override
+        public void run() {
+            seekUpdation();
+        }
+    };
+
+    public void seekUpdation() {
+        seekBar.setMax(songMax);
+        seekBar.setOnSeekBarChangeListener(
+                new SeekBar.OnSeekBarChangeListener() {
+
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        seekBar.setProgress(progress);
+                        mPlayer.seekToPosition(progress);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                }
+        );
+        seekHandler.postDelayed(run, 1000);
+    }
+
+    @Override
+    public void onClick (View view){
+        switch (view.getId()) {
+            case R.id.playButton:
+                playButton(view);
+                break;
+        }
+    }
+
+
     public void connectBluetooth(View v){
         if(mBluetooth.isEnabled()){
             Intent getDevice = new Intent(this, DeviceList.class);
@@ -310,7 +371,7 @@ String token = "";
                         songStarted = true;
                         playQueue.add(returnedItem);
                         if (connectedThread != null) {
-                            connectedThread.write("playing".getBytes());
+                            connectedThread.write(("playing" + "-" + returnedItem.album.images.get(1).url).getBytes());
                         }
                     } else if (!playQueue.isEmpty()) {
                         playQueue.add(returnedItem);
@@ -406,7 +467,11 @@ String token = "";
                             playing = true;
                             if(connectedThread !=null){connectedThread.write("resume".getBytes());}
                         }
-
+                        songMax = playerState.durationInMs;
+                        songPos = playerState.positionInMs;
+                        seekBar.setMax(songMax);
+                        seekBar.setProgress(songPos);
+                        seekUpdation();
                     }
                 });
 
@@ -721,6 +786,8 @@ long currentTime;
                             public void run() {
                                 ImageButton btn = (ImageButton) findViewById(R.id.playButton);
                                 btn.setImageResource(R.drawable.pausebutton);
+                                ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
+                                Picasso.with(MainActivity.this).load(parts[2]).into(albumArt);
                             }
                         });
                     }
@@ -747,17 +814,6 @@ long currentTime;
                             });
                         }
                     }
-                    /*
-
-                    if(parts[0].equals("add")){
-                        Log.d("AddSTring: ", parts[2]);
-                        Item item = new Item();
-                        item.uri = parts[1];
-                        item.album.images.get(1).url = parts[2];
-                        item.name = parts[3];
-                        item.artists.get(0).name = parts[4];
-                        playQueue.add(item);
-                    }*/
 
                     if(readMessage.equals("play")){
                         mPlayer.pause();
