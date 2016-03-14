@@ -133,4 +133,49 @@
         android:layout_below="@+id/btConnect"
         android:layout_centerHorizontal="true" />
 
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/controlSwitch"
+        android:checked="false"
+        android:layout_below="@+id/textView4"
+        android:layout_toLeftOf="@+id/backButton"
+        android:layout_toStartOf="@+id/backButton"
+        android:onClick="controlSwitch"/>
+
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/simulPlayback"
+        android:checked="false"
+        android:layout_centerVertical="true"
+        android:layout_alignLeft="@+id/searchbutton"
+        android:layout_alignStart="@+id/searchbutton" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Control Connected"
+        android:id="@+id/textView3"
+        android:gravity="center"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_toLeftOf="@+id/connectedDevice"
+        android:layout_toStartOf="@+id/connectedDevice"
+        android:layout_above="@+id/controlSwitch" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="Simultaneous Playback (Alpha)"
+        android:id="@+id/textView4"
+        android:gravity="center"
+        android:layout_alignRight="@+id/searchbutton"
+        android:layout_alignEnd="@+id/searchbutton"
+        android:layout_toRightOf="@+id/connectedDevice"
+        android:layout_toEndOf="@+id/connectedDevice"
+        android:layout_above="@+id/simulPlayback" />
+
 </RelativeLayout>

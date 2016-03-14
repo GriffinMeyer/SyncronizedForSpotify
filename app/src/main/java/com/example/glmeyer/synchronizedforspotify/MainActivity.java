@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.spotify.sdk.android.authentication.AuthenticationClient;
@@ -31,8 +32,10 @@ import com.squareup.picasso.Picasso;
 
 import android.widget.Toast;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Set;
@@ -50,7 +53,7 @@ public class MainActivity extends Activity implements
     private static final String CLIENT_ID = "90eb86d7dd924772994f5134d9eb6cab";
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "http://griffinmeyer.com/callback/";
-
+    boolean control = false;
 
     private static final UUID MY_UUID = UUID.fromString("5a6a493f-6feb-4145-8853-4593aa1b4f1c");
 
@@ -97,31 +100,6 @@ public class MainActivity extends Activity implements
                 return false;
             }
         });
-
-/*
-        mBluetooth = BluetoothAdapter.getDefaultAdapter();
-        if(mBluetooth == null){
-            //No bluetooth_enabled support
-        }else if(mBluetooth != null) {
-            if (!mBluetooth.isEnabled()) {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            }else{
-                getPairedDevices();
-                global = mBluetooth.getRemoteDevice("84:10:0D:4C:6F:BD");
-            }
-        }
-       */
-    }
-BluetoothDevice remoteDiv = null;
-    public void getPairedDevices(){
-        Set<BluetoothDevice> pairedDevices = mBluetooth.getBondedDevices();
-        if(pairedDevices.size() > 0){
-            for (BluetoothDevice device : pairedDevices){
-                Log.d("Bluetooth: ", device.getAddress());
-
-            }
-        }
     }
 
     public void startBluetooth(View v){
@@ -149,17 +127,6 @@ BluetoothDevice remoteDiv = null;
             startActivityForResult(getDevice, 69);
         }
     }
-
-    public void sendPlay(){
-
-    }
-    public void startClient(View v){
-        ConnectThread connectThread = new ConnectThread(global);
-        Thread thread = new Thread(connectThread);
-        thread.start();
-
-    }
-
 
     public void search(View v){
         Intent intent = new Intent(this, Search.class);
@@ -235,6 +202,9 @@ String token = "";
                     mPlayer.queue(returnedItem.uri);
                     songStarted = true;
                     playQueue.add(returnedItem);
+                    if(connectedThread != null) {
+                        connectedThread.write("playing".getBytes());
+                    }
                 }else if(!playQueue.isEmpty()){
                     playQueue.add(returnedItem);
                     mPlayer.queue(returnedItem.uri);
@@ -244,117 +214,99 @@ String token = "";
         }
     }
 
-    public void nextTrack(View v){
-        Log.d("Queue: ", playQueue.isEmpty() + "");
-        mPlayer.skipToNext();
-        ImageButton btn = (ImageButton) findViewById(R.id.playButton);
-        ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
-        TextView title = (TextView) findViewById(R.id.mainTitle);
-        TextView artist = (TextView) findViewById(R.id.mainArtist);
-        if(!playQueue.isEmpty()) {
-            Item returnedItem = playQueue.get(playQueue.size()-1);
-            Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
-            btn.setImageResource(R.drawable.pausebutton);
-            title.setText(returnedItem.name);
-            artist.setText(returnedItem.artists.get(0).name);
-            playQueue.remove(playQueue.size()-1);
-            if(playQueue.isEmpty()){
-                title.setText("Chose a song");
-                artist.setText("");
-                btn.setImageResource(R.drawable.playbutton);
-                songStarted = false;
-                albumArt.setImageResource(R.drawable.emptyalbum);
+    public void controlSwitch(View v){
+        Switch s = (Switch) findViewById(R.id.controlSwitch);
+        if(connectedThread != null) {
+            connectedThread.write("control".getBytes());
+        }
+        if(s.isChecked()){
+            control = true;
+        }
+        if(!s.isChecked()){
+            control = false;
+        }
+    }
+
+    public void nextTrack(View v) throws IOException {
+        if(control && connectedThread != null){
+            connectedThread.write("next".getBytes());
+        }else {
+            Log.d("Queue: ", playQueue.isEmpty() + "");
+            mPlayer.skipToNext();
+            ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+            ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
+            TextView title = (TextView) findViewById(R.id.mainTitle);
+            TextView artist = (TextView) findViewById(R.id.mainArtist);
+            if (!playQueue.isEmpty()) {
+                Item returnedItem = playQueue.get(playQueue.size() - 1);
+                if (connectedThread != null && returnedItem != null) {
+                    //connectedThread.write(("play" + "-" + returnedItem.uri + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
+                    if (control) {
+                        connectedThread.write(("next" + "-" + returnedItem.uri + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
+                    }
+                }
+                Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
+                btn.setImageResource(R.drawable.pausebutton);
+                title.setText(returnedItem.name);
+                artist.setText(returnedItem.artists.get(0).name);
+                playQueue.remove(playQueue.size() - 1);
+                if (playQueue.isEmpty()) {
+                    title.setText("Chose a song");
+                    artist.setText("");
+                    btn.setImageResource(R.drawable.playbutton);
+                    songStarted = false;
+                    albumArt.setImageResource(R.drawable.emptyalbum);
+                }
             }
         }
     }
 
     public void previousTrack(View v){
-        mPlayer.seekToPosition(0);
-    }
-
-
-    public void logOut(View v){
-        //AuthenticationClient.clearCookies(this);
-        AcceptThread server = new AcceptThread();
-        Thread thread = new Thread(server);
-        thread.start();
+        if(control && connectedThread != null){
+            connectedThread.write("previous".getBytes());
+        }else {
+            mPlayer.seekToPosition(0);
+        }
     }
 
     PlayerStateCallback playerStateCallback;
     PlayerState playerState;
     boolean songStarted = false;
+    boolean playing = false;
     public void playButton(View v) {
-        if (!songStarted) {
-            songStarted = true;
-            ImageButton btn = (ImageButton) findViewById(R.id.playButton);
-            btn.setImageResource(R.drawable.pausebutton);
-            mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
-            //BassBoost booster = new BassBoost(0,0);
-            //booster.setEnabled(true);
+        if(control && connectedThread != null){
+            connectedThread.write("playToggle".getBytes());
+            if(playing){
 
-        } else if(songStarted){
-
-            mPlayer.getPlayerState(new PlayerStateCallback() {
-                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
-
-                @Override
-                public void onPlayerState(PlayerState playerState) {
-                    if (playerState.playing) {
-                        btn.setImageResource(R.drawable.playbutton);
-                        mPlayer.pause();
-                    }
-                    if (!playerState.playing) {
-                        btn.setImageResource(R.drawable.pausebutton);
-                        mPlayer.resume();
-                    }
-                }
-            });
-
-        /*
-        if(!songStarted){
-            mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
-            songStarted = true;
-        }else if(songStarted) {
-
-
-
-            mPlayer.getPlayerState(playerStateCallback);
-            playerStateCallback.onPlayerState(playerState);
-
-
-            if (playerState.playing) {
-                btn.setImageResource(R.drawable.pausebutton);
-                mPlayer.pause();
             }
-            if (!playerState.playing) {
-                btn.setImageResource(R.drawable.playbutton);
-                mPlayer.resume();
-            }*/
+
+        }else {
+            if (!songStarted) {
+
+            } else if (songStarted) {
+                //connectedThread.write("songStarted".getBytes());
+                playing = true;
+
+                mPlayer.getPlayerState(new PlayerStateCallback() {
+                    ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+
+                    @Override
+                    public void onPlayerState(PlayerState playerState) {
+                        if (playerState.playing) {
+                            btn.setImageResource(R.drawable.playbutton);
+                            mPlayer.pause();
+                            //connectedThread.write("pause".getBytes());
+                        }
+                        if (!playerState.playing) {
+                            btn.setImageResource(R.drawable.pausebutton);
+                            mPlayer.resume();
+                            //connectedThread.write("resume".getBytes());
+                        }
+                    }
+                });
+
+            }
         }
-    }
-
-
-    public void playSong(View v){
-        //EditText et = (EditText)findViewById(R.id.editText);
-        ImageButton btn = (ImageButton)findViewById(R.id.playButton);
-        mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
-        btn.setImageResource(R.drawable.pausebutton);
-        paused = false;
-    }
-
-    public void pauseSong(View v){
-        if (paused == false) {
-            mPlayer.pause();
-            paused = true;
-        }else if(paused == true) {
-            mPlayer.resume();
-            paused = false;
-        }
-    }
-
-    public void showAuth(View v){
-        Log.d("SPOTYLOG", UUID.randomUUID().toString());
-
     }
 
     @Override
@@ -426,39 +378,11 @@ long currentTime;
             return ((System.currentTimeMillis() - currentTime) / 2);
         }
     }
-    public void playVideo(View v){
-        byte[] outPut = "play".getBytes();
-        long delay = testLatency();
-        //long delay2 = testLatency();
-        //long avgDelay = (delay+delay2)/2;
-        connectedThread.write(outPut);
 
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                mPlayer.play("spotify:track:6HTJZ0TQJVMSKkUGzAOe2h");
-                paused = false;
-            }
-        },delay);
-
-    }
-String output = "";
-    public void readSocket(View v){
-        Log.d("Socket Output", "Here it comes");
-        Log.d("Socket Output",output);
-    }
+    String output = "";
 
     ConnectedThread connectedThread;
-    void printSocket(BluetoothSocket s){
-        Log.d("Socket: ", s.toString());
-        connectedThread = new ConnectedThread(s);
-        Thread thread = new Thread(connectedThread);
-        thread.start();
-        byte[] test = "Mama Mia".getBytes();
-        connectedThread.write(test);
-        mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
-        paused = false;
-    }
+
     void connectedSocket(BluetoothSocket s){
 
         final BluetoothSocket tempSocket = s;
@@ -474,9 +398,13 @@ String output = "";
 
         connectedThread = new ConnectedThread(s);
         Thread thread = new Thread(connectedThread);
-        thread.start();;
+        thread.start();
+        if(!playQueue.isEmpty()){
+            for(int i = 0; i < playQueue.size()-1; i++){
+                connectedThread.write(("add" + "-" + playQueue.get(i).uri + "-" + playQueue.get(i).album.images.get(1).url + "-" + playQueue.get(1).name + "-" + playQueue.get(0).artists.get(0).name).getBytes());
+            }
+        }
     }
-
 
 
     private class AcceptThread implements Runnable {
@@ -602,8 +530,147 @@ String output = "";
                     // Read from the InputStream
                     bytes = mmInStream.read(buffer);
                     // Send the obtained bytes to the UI activity
-                    String readMessage = new String(buffer, 0, bytes);
+                    final String readMessage = new String(buffer, 0, bytes);
+                    final String [] parts = readMessage.split("-");
+
                     output = readMessage;
+                    if(parts[0].equals("play")){/*
+                        if(!parts[1].equals("null")) {
+                            mPlayer.play(parts[1]);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ImageView img = (ImageView) findViewById(R.id.mainalbumart);
+                                    Picasso.with(MainActivity.this).load(parts[2]).into(img);
+                                    TextView songTitle = (TextView) findViewById(R.id.mainTitle);
+                                    TextView artist = (TextView) findViewById(R.id.mainArtist);
+                                    songTitle.setText(parts[3]);
+                                    artist.setText(parts[4]);
+                                }
+                            });
+                        }else if(parts[1].equals("null")){
+                            mPlayer.resume();
+                        }*/
+                    }
+
+                    if(parts[0].equals("add")){/*
+                        final Item item = new Item();
+                        item.album = new Album();
+                        item.album.images = new ArrayList<Image>(3);
+                        item.album.images.add(new Image());
+                        item.album.images.add(new Image());
+                        item.album.images.add(new Image());
+                        item.uri = parts[1];
+                        item.album.images.get(1).url = parts[2];
+                        item.name = parts[3];
+                        item.artists = new ArrayList<Artist>(1);
+                        item.artists.add(new Artist());
+                        item.artists.get(0).name = parts[4];
+                        if(playQueue.isEmpty()){
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                                    ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
+                                    TextView title = (TextView) findViewById(R.id.mainTitle);
+                                    TextView artist = (TextView) findViewById(R.id.mainArtist);
+                                    Picasso.with(MainActivity.this).load(item.album.images.get(1).url).into(albumArt);
+                                    btn.setImageResource(R.drawable.pausebutton);
+                                    title.setText(item.name);
+                                    artist.setText(item.artists.get(0).name);
+                                }
+                            });
+                            mPlayer.queue(item.uri);
+                            songStarted = true;
+                            playQueue.add(item);
+                        } else if(playQueue.isEmpty()){
+                            playQueue.add(item);
+                        }
+                        //playQueue.add(item);*/
+                    }
+                    if(parts[0].equals("next")){
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    nextTrack(findViewById(android.R.id.content));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                    }
+                    if(parts[0].equals("previous")){
+                        mPlayer.seekToPosition(0);
+                    }
+
+                    if(parts[0].equals("display")){
+
+                    }
+                    if(parts[0].equals("pause")){
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                                btn.setImageResource(R.drawable.playbutton);
+                            }
+                        });
+                        //mPlayer.pause();
+                    }
+                    if(parts[0].equals("resume")){
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                                btn.setImageResource(R.drawable.pausebutton);
+                            }
+                        });
+                        //mPlayer.resume();
+                    }
+                    if(parts[0].equals("playing")){
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                                btn.setImageResource(R.drawable.pausebutton);
+                            }
+                        });
+                    }
+                    if(parts[0].equals("playToggle")){
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                playButton(findViewById(android.R.id.content));
+                            }
+                        });
+                    }
+                    if(parts[0].equals("songStarted")){
+                       // songStarted = true;
+                    }
+                    if(parts[0].equals("control")){
+                        if(control = true){
+                            control = false;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Switch s = (Switch) findViewById(R.id.controlSwitch);
+                                    s.setChecked(false);
+                                }
+                            });
+                        }
+                    }
+                    /*
+
+                    if(parts[0].equals("add")){
+                        Log.d("AddSTring: ", parts[2]);
+                        Item item = new Item();
+                        item.uri = parts[1];
+                        item.album.images.get(1).url = parts[2];
+                        item.name = parts[3];
+                        item.artists.get(0).name = parts[4];
+                        playQueue.add(item);
+                    }*/
+
                     if(readMessage.equals("play")){
                         mPlayer.pause();
                         mPlayer.play("spotify:track:6HTJZ0TQJVMSKkUGzAOe2h");
