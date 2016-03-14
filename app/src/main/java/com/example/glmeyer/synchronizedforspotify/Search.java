@@ -142,11 +142,13 @@ public class Search extends AppCompatActivity {
             spotifySearchCall.enqueue(new Callback<SpotifySearch>() {
                 @Override
                 public void onResponse(Response<SpotifySearch> response) {
+                    if (!response.body().tracks.items.isEmpty()) {
                         Log.d("Album Name: ", response.body().tracks.items.get(0).album.name.toString());
                         for (int i = 0; i < (response.body().tracks.items.size() - 1); i++) {
                             myAdapter.add(response.body().tracks.items.get(i));
                         }
                     }
+                }
 
 
 

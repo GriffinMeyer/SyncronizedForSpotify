@@ -187,29 +187,35 @@ String token = "";
 
         if(requestCode == 57){
             if(resultCode == Activity.RESULT_OK) {
-                TextView searchBar = (TextView)findViewById(R.id.searchbar);
+                TextView searchBar = (TextView) findViewById(R.id.searchbar);
                 searchBar.setText("");
                 Item returnedItem = (Item) intent.getSerializableExtra("item");
-                if(playQueue.isEmpty()){
-                    ImageButton btn = (ImageButton) findViewById(R.id.playButton);
-                    ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
-                    TextView title = (TextView) findViewById(R.id.mainTitle);
-                    TextView artist = (TextView) findViewById(R.id.mainArtist);
-                    Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
-                    btn.setImageResource(R.drawable.pausebutton);
-                    title.setText(returnedItem.name);
-                    artist.setText(returnedItem.artists.get(0).name);
-                    mPlayer.queue(returnedItem.uri);
-                    songStarted = true;
-                    playQueue.add(returnedItem);
-                    if(connectedThread != null) {
-                        connectedThread.write("playing".getBytes());
+                if (control) {
+                    if (connectedThread != null) {
+                        connectedThread.write(("add" + "-" + returnedItem.uri + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
                     }
-                }else if(!playQueue.isEmpty()){
-                    playQueue.add(returnedItem);
-                    mPlayer.queue(returnedItem.uri);
-                }
+                } else {
+                    if (playQueue.isEmpty()) {
+                        ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                        ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
+                        TextView title = (TextView) findViewById(R.id.mainTitle);
+                        TextView artist = (TextView) findViewById(R.id.mainArtist);
+                        Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
+                        btn.setImageResource(R.drawable.pausebutton);
+                        title.setText(returnedItem.name);
+                        artist.setText(returnedItem.artists.get(0).name);
+                        mPlayer.queue(returnedItem.uri);
+                        songStarted = true;
+                        playQueue.add(returnedItem);
+                        if (connectedThread != null) {
+                            connectedThread.write("playing".getBytes());
+                        }
+                    } else if (!playQueue.isEmpty()) {
+                        playQueue.add(returnedItem);
+                        mPlayer.queue(returnedItem.uri);
+                    }
 
+                }
             }
         }
     }
@@ -285,23 +291,24 @@ String token = "";
 
             } else if (songStarted) {
                 //connectedThread.write("songStarted".getBytes());
-                playing = true;
 
                 mPlayer.getPlayerState(new PlayerStateCallback() {
                     ImageButton btn = (ImageButton) findViewById(R.id.playButton);
-
                     @Override
                     public void onPlayerState(PlayerState playerState) {
                         if (playerState.playing) {
                             btn.setImageResource(R.drawable.playbutton);
                             mPlayer.pause();
-                            //connectedThread.write("pause".getBytes());
+                            playing = false;
+                            connectedThread.write("pause".getBytes());
                         }
                         if (!playerState.playing) {
                             btn.setImageResource(R.drawable.pausebutton);
                             mPlayer.resume();
-                            //connectedThread.write("resume".getBytes());
+                            playing = true;
+                            connectedThread.write("resume".getBytes());
                         }
+
                     }
                 });
 
@@ -399,11 +406,6 @@ long currentTime;
         connectedThread = new ConnectedThread(s);
         Thread thread = new Thread(connectedThread);
         thread.start();
-        if(!playQueue.isEmpty()){
-            for(int i = 0; i < playQueue.size()-1; i++){
-                connectedThread.write(("add" + "-" + playQueue.get(i).uri + "-" + playQueue.get(i).album.images.get(1).url + "-" + playQueue.get(1).name + "-" + playQueue.get(0).artists.get(0).name).getBytes());
-            }
-        }
     }
 
 
@@ -553,7 +555,7 @@ long currentTime;
                         }*/
                     }
 
-                    if(parts[0].equals("add")){/*
+                    if(parts[0].equals("add")){
                         final Item item = new Item();
                         item.album = new Album();
                         item.album.images = new ArrayList<Image>(3);
@@ -567,24 +569,15 @@ long currentTime;
                         item.artists.add(new Artist());
                         item.artists.get(0).name = parts[4];
                         if(playQueue.isEmpty()){
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ImageButton btn = (ImageButton) findViewById(R.id.playButton);
-                                    ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
-                                    TextView title = (TextView) findViewById(R.id.mainTitle);
-                                    TextView artist = (TextView) findViewById(R.id.mainArtist);
-                                    Picasso.with(MainActivity.this).load(item.album.images.get(1).url).into(albumArt);
-                                    btn.setImageResource(R.drawable.pausebutton);
-                                    title.setText(item.name);
-                                    artist.setText(item.artists.get(0).name);
-                                }
-                            });
                             mPlayer.queue(item.uri);
                             songStarted = true;
                             playQueue.add(item);
-                        } else if(playQueue.isEmpty()){
+                            if (connectedThread != null) {
+                                connectedThread.write("playing".getBytes());
+                            }
+                        } else if(!playQueue.isEmpty()){
                             playQueue.add(item);
+                            mPlayer.queue(item.uri);
                         }
                         //playQueue.add(item);*/
                     }
@@ -605,6 +598,17 @@ long currentTime;
                     }
 
                     if(parts[0].equals("display")){
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                                if(playing) {
+                                    btn.setImageResource(R.drawable.pausebutton);
+                                }else if(!playing){
+                                    btn.setImageResource(R.drawable.playbutton);
+                                }
+                            }
+                        });
 
                     }
                     if(parts[0].equals("pause")){
