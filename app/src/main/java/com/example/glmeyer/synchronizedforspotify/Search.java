@@ -10,11 +10,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -84,7 +87,7 @@ public class Search extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
-        String searchString;
+        final String searchString;
 
         Bundle extras = getIntent().getExtras();
         if(extras == null){
@@ -95,57 +98,77 @@ public class Search extends AppCompatActivity {
             tv.setText(searchString);
             songSearch(searchString);
         }
-
-        // Look up song in spotify.
+        EditText search = (EditText)findViewById(R.id.searchActivitybar);
+        search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if(actionId == EditorInfo.IME_ACTION_SEARCH){
+                    searchActivitySearch(v);
+                    return true;
+                }
+                return false;
+            }
+        });
     }
     private songAdapter myAdapter;
     private ArrayList<Item> songList;
 
-    public void songSearch(String searchText){
-        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+    public void searchActivitySearch(View v){
+        TextView searchBar = (TextView)findViewById(R.id.searchActivitybar);
+        String searchText = searchBar.getText().toString();
+        songSearch(searchText);
+
+    }
+
+    public void songSearch(String searchText) {
+        if (!searchText.equals("")) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-        OkHttpClient httpClient = new OkHttpClient.Builder()
-                .addInterceptor(logging)
-                .build();
+            OkHttpClient httpClient = new OkHttpClient.Builder()
+                    .addInterceptor(logging)
+                    .build();
 
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://api.spotify.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        spotifyService service = retrofit.create(spotifyService.class);
-        songList = new ArrayList<Item>();
-        myAdapter = new songAdapter(this, R.layout.list_song,songList);
-        ListView songListView = (ListView) findViewById(R.id.listView);
-        songListView.setAdapter(myAdapter);
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl("https://api.spotify.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+            spotifyService service = retrofit.create(spotifyService.class);
+            songList = new ArrayList<Item>();
+            myAdapter = new songAdapter(this, R.layout.list_song, songList);
+            ListView songListView = (ListView) findViewById(R.id.listView);
+            songListView.setAdapter(myAdapter);
 
-        Call<SpotifySearch> spotifySearchCall = service.searchSong(searchText, "track", 10, 0);
-        spotifySearchCall.enqueue(new Callback<SpotifySearch>() {
-            @Override
-            public void onResponse(Response<SpotifySearch> response) {
-                Log.d("Album Name: ", response.body().tracks.items.get(0).album.name.toString());
-                for (int i = 0; i < (response.body().tracks.items.size() -1); i++){
-                    myAdapter.add(response.body().tracks.items.get(i));
+            Call<SpotifySearch> spotifySearchCall = service.searchSong(searchText, "track", 15, 0);
+            spotifySearchCall.enqueue(new Callback<SpotifySearch>() {
+                @Override
+                public void onResponse(Response<SpotifySearch> response) {
+                        Log.d("Album Name: ", response.body().tracks.items.get(0).album.name.toString());
+                        for (int i = 0; i < (response.body().tracks.items.size() - 1); i++) {
+                            myAdapter.add(response.body().tracks.items.get(i));
+                        }
+                    }
+
+
+
+
+                @Override
+                public void onFailure(Throwable t) {
+
                 }
 
-
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-
-            }
-        });
-        songListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Item item = myAdapter.getItem(position);
-                Log.d("TestClick: ", item.artists.get(0).name);
-                Intent returnIntent = new Intent();
-                returnIntent.putExtra("item", item);
-                setResult(Activity.RESULT_OK, returnIntent);
-                finish();
-            }
-        });
+            });
+            songListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Item item = myAdapter.getItem(position);
+                    Log.d("TestClick: ", item.artists.get(0).name);
+                    Intent returnIntent = new Intent();
+                    returnIntent.putExtra("item", item);
+                    setResult(Activity.RESULT_OK, returnIntent);
+                    finish();
+                }
+            });
+        }
     }
 
     public interface spotifyService{

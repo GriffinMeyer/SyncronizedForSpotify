@@ -27,13 +27,13 @@ import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.PlayerNotificationCallback;
 import com.spotify.sdk.android.player.PlayerState;
 import com.squareup.picasso.Picasso;
-import android.media.audiofx.*;
 
-import org.w3c.dom.Text;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -66,6 +66,12 @@ public class MainActivity extends Activity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mBluetooth = BluetoothAdapter.getDefaultAdapter();
+        if(mBluetooth != null && mBluetooth.isEnabled()){
+            ImageButton btButton = (ImageButton)findViewById(R.id.bluetoothbutton);
+            btButton.setImageResource(R.drawable.bluetooth_enabled);
+        }
+
         AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
                 AuthenticationResponse.Type.TOKEN,
                 REDIRECT_URI);
@@ -87,10 +93,10 @@ public class MainActivity extends Activity implements
             }
         });
 
-
+/*
         mBluetooth = BluetoothAdapter.getDefaultAdapter();
         if(mBluetooth == null){
-            //No bluetooth support
+            //No bluetooth_enabled support
         }else if(mBluetooth != null) {
             if (!mBluetooth.isEnabled()) {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -100,6 +106,7 @@ public class MainActivity extends Activity implements
                 global = mBluetooth.getRemoteDevice("84:10:0D:4C:6F:BD");
             }
         }
+       */
     }
 BluetoothDevice remoteDiv = null;
     public void getPairedDevices(){
@@ -110,6 +117,29 @@ BluetoothDevice remoteDiv = null;
 
             }
         }
+    }
+
+    public void startBluetooth(View v){
+        if(mBluetooth == null){
+            Toast toast = Toast.makeText(this, "No bluetooth adapter found!", Toast.LENGTH_SHORT);
+            toast.show();
+
+        }else if(mBluetooth != null){
+            if(mBluetooth.isEnabled()){
+                mBluetooth.disable();
+                ImageButton btButton = (ImageButton)findViewById(R.id.bluetoothbutton);
+                btButton.setImageResource(R.drawable.bluetooth_disabled);
+            }else if(!mBluetooth.isEnabled()) {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                ImageButton btButton = (ImageButton)findViewById(R.id.bluetoothbutton);
+                btButton.setImageResource(R.drawable.bluetooth_enabled);
+            }
+        }
+    }
+
+    public void connectBluetooth(View v){
+        Intent connectBtIntent = new Intent(BluetoothAdapter.)
     }
 
     public void sendPlay(){
@@ -128,8 +158,9 @@ BluetoothDevice remoteDiv = null;
         EditText et = (EditText)findViewById(R.id.searchbar);
         String searchText = et.getText().toString();
         intent.putExtra("searchText", searchText);
-        startActivityForResult(intent, 1);
+        startActivityForResult(intent, 57);
     }
+ArrayList<Item> playQueue = new ArrayList<Item>();
 
 String token = "";
     @Override
@@ -160,23 +191,60 @@ String token = "";
             }
         }
 
-        if(requestCode == 1){
+        if(requestCode == 57){
             if(resultCode == Activity.RESULT_OK) {
+                TextView searchBar = (TextView)findViewById(R.id.searchbar);
+                searchBar.setText("");
                 Item returnedItem = (Item) intent.getSerializableExtra("item");
-                mPlayer.play(returnedItem.uri);
-                //String albumURL = intent.getStringExtra("albumURL");
-                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
-                ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
-                TextView title = (TextView) findViewById(R.id.mainTitle);
-                TextView artist = (TextView) findViewById(R.id.mainArtist);
-                Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
-                btn.setImageResource(R.drawable.pausebutton);
-                title.setText(returnedItem.name);
-                artist.setText(returnedItem.artists.get(0).name);
-                songStarted = true;
+                if(playQueue.isEmpty()){
+                    ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                    ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
+                    TextView title = (TextView) findViewById(R.id.mainTitle);
+                    TextView artist = (TextView) findViewById(R.id.mainArtist);
+                    Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
+                    btn.setImageResource(R.drawable.pausebutton);
+                    title.setText(returnedItem.name);
+                    artist.setText(returnedItem.artists.get(0).name);
+                    mPlayer.queue(returnedItem.uri);
+                    songStarted = true;
+                    playQueue.add(returnedItem);
+                }else if(!playQueue.isEmpty()){
+                    playQueue.add(returnedItem);
+                    mPlayer.queue(returnedItem.uri);
+                }
+
             }
         }
     }
+
+    public void nextTrack(View v){
+        Log.d("Queue: ", playQueue.isEmpty() + "");
+        mPlayer.skipToNext();
+        ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+        ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
+        TextView title = (TextView) findViewById(R.id.mainTitle);
+        TextView artist = (TextView) findViewById(R.id.mainArtist);
+        if(!playQueue.isEmpty()) {
+            Item returnedItem = playQueue.get(playQueue.size()-1);
+            Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
+            btn.setImageResource(R.drawable.pausebutton);
+            title.setText(returnedItem.name);
+            artist.setText(returnedItem.artists.get(0).name);
+            playQueue.remove(playQueue.size()-1);
+            if(playQueue.isEmpty()){
+                title.setText("Chose a song");
+                artist.setText("");
+                btn.setImageResource(R.drawable.playbutton);
+                songStarted = false;
+                albumArt.setImageResource(R.drawable.emptyalbum);
+            }
+        }
+    }
+
+    public void previousTrack(View v){
+        mPlayer.seekToPosition(0);
+    }
+
 
     public void logOut(View v){
         //AuthenticationClient.clearCookies(this);

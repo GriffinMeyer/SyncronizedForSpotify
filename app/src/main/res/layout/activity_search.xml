@@ -10,6 +10,8 @@
     tools:context=".Search">
 
     <EditText
+        android:imeOptions="actionSearch"
+        android:inputType="text"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:id="@+id/searchActivitybar"
@@ -24,4 +26,15 @@
         android:layout_below="@+id/searchActivitybar"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
+
+    <ImageButton
+        style="?android:attr/borderlessButtonStyle"
+        android:src="@drawable/search"
+        android:onClick="searchActivitySearch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/searchActivitybutton"
+        android:layout_alignBottom="@+id/searchActivitybar"
+        android:layout_toRightOf="@+id/searchActivitybar"
+        android:layout_toEndOf="@+id/searchActivitybar" />
 </RelativeLayout>

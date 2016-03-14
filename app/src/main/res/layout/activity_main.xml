@@ -47,8 +47,7 @@
         android:id="@+id/playButton"
         android:onClick="playButton"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="43dp" />
+        android:layout_centerHorizontal="true" />
 
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
@@ -58,7 +57,8 @@
         android:src="@drawable/backbutton"
         android:layout_alignBottom="@+id/playButton"
         android:layout_toLeftOf="@+id/playButton"
-        android:layout_toStartOf="@+id/playButton" />
+        android:layout_toStartOf="@+id/playButton"
+        android:onClick="previousTrack"/>
 
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
@@ -68,24 +68,27 @@
         android:src="@drawable/nextbutton"
         android:layout_alignBottom="@+id/playButton"
         android:layout_toRightOf="@+id/playButton"
-        android:layout_toEndOf="@+id/playButton" />
+        android:layout_toEndOf="@+id/playButton"
+        android:onClick="nextTrack"/>
 
     <ImageView
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:id="@+id/mainalbumart"
         android:layout_below="@+id/button3"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/emptyalbum" />
 
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:id="@+id/bluetoothbutton"
-        android:src="@drawable/bluetooth"
+        android:src="@drawable/bluetooth_disabled"
         android:layout_alignBottom="@+id/searchbar"
         android:layout_toLeftOf="@+id/button4"
-        android:layout_toStartOf="@+id/button4" />
+        android:layout_toStartOf="@+id/button4"
+        android:onClick="startBluetooth"/>
 
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
@@ -119,7 +122,7 @@
         android:gravity="center"
         android:id="@+id/mainTitle"
         android:layout_below="@+id/mainalbumart"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -134,8 +137,20 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/seekBar"
-        android:layout_centerVertical="true"
-        android:layout_alignRight="@+id/mainalbumart"
-        android:layout_alignEnd="@+id/mainalbumart" />
+        android:layout_above="@+id/playButton"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignTop="@+id/playButton"
+        android:layout_alignRight="@+id/searchbutton"
+        android:layout_alignEnd="@+id/searchbutton" />
+
+    <ImageButton
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/btConnect"
+        android:layout_above="@+id/button4"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/bluetooth_connect" />
 
 </RelativeLayout>
