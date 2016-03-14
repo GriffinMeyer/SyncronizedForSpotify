@@ -371,7 +371,7 @@ String token = "";
                         songStarted = true;
                         playQueue.add(returnedItem);
                         if (connectedThread != null) {
-                            connectedThread.write(("playing" + "-" + returnedItem.album.images.get(1).url).getBytes());
+                            connectedThread.write(("playing" + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
                         }
                     } else if (!playQueue.isEmpty()) {
                         playQueue.add(returnedItem);
@@ -413,6 +413,9 @@ String token = "";
                     if (control) {
                         connectedThread.write(("next" + "-" + returnedItem.uri + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
                     }
+                }
+                if (connectedThread != null) {
+                    connectedThread.write(("playing" + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
                 }
                 Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
                 btn.setImageResource(R.drawable.pausebutton);
@@ -785,9 +788,13 @@ long currentTime;
                             @Override
                             public void run() {
                                 ImageButton btn = (ImageButton) findViewById(R.id.playButton);
+                                TextView title = (TextView) findViewById(R.id.mainTitle);
+                                TextView artist = (TextView) findViewById(R.id.mainArtist);
                                 btn.setImageResource(R.drawable.pausebutton);
                                 ImageView albumArt = (ImageView) findViewById(R.id.mainalbumart);
-                                Picasso.with(MainActivity.this).load(parts[2]).into(albumArt);
+                                Picasso.with(MainActivity.this).load(parts[1]).into(albumArt);
+                                title.setText(parts[2]);
+                                artist.setText(parts[3]);
                             }
                         });
                     }
