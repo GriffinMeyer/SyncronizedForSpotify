@@ -17,7 +17,8 @@
         android:id="@+id/playButton"
         android:onClick="playButton"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="30dp" />
 
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
@@ -103,17 +104,6 @@
         android:layout_below="@+id/mainTitle"
         android:layout_centerHorizontal="true" />
 
-    <SeekBar
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/seekBar"
-        android:layout_above="@+id/playButton"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignTop="@+id/playButton"
-        android:layout_alignRight="@+id/searchbutton"
-        android:layout_alignEnd="@+id/searchbutton" />
-
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
         android:layout_width="wrap_content"
@@ -138,19 +128,9 @@
         android:layout_height="wrap_content"
         android:id="@+id/controlSwitch"
         android:checked="false"
-        android:layout_below="@+id/textView4"
-        android:layout_toLeftOf="@+id/backButton"
-        android:layout_toStartOf="@+id/backButton"
-        android:onClick="controlSwitch"/>
-
-    <Switch
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/simulPlayback"
-        android:checked="false"
-        android:layout_centerVertical="true"
-        android:layout_alignLeft="@+id/searchbutton"
-        android:layout_alignStart="@+id/searchbutton" />
+        android:onClick="controlSwitch"
+        android:layout_above="@+id/mainalbumart"
+        android:layout_centerHorizontal="true" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -159,23 +139,41 @@
         android:text="Control Connected"
         android:id="@+id/textView3"
         android:gravity="center"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_toLeftOf="@+id/connectedDevice"
-        android:layout_toStartOf="@+id/connectedDevice"
-        android:layout_above="@+id/controlSwitch" />
+        android:layout_above="@+id/controlSwitch"
+        android:layout_centerHorizontal="true" />
 
-    <TextView
+    <ImageButton
+        style="?android:attr/borderlessButtonStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Simultaneous Playback (Alpha)"
-        android:id="@+id/textView4"
-        android:gravity="center"
-        android:layout_alignRight="@+id/searchbutton"
-        android:layout_alignEnd="@+id/searchbutton"
-        android:layout_toRightOf="@+id/connectedDevice"
-        android:layout_toEndOf="@+id/connectedDevice"
-        android:layout_above="@+id/simulPlayback" />
+        android:id="@+id/micbutton"
+        android:src="@drawable/microphone"
+        android:layout_alignTop="@+id/backButton"
+        android:layout_toLeftOf="@+id/mainalbumart"
+        android:layout_toStartOf="@+id/mainalbumart"
+        android:onClick="bass"/>
+
+    <ImageButton
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/mutebutton"
+        android:layout_alignBottom="@+id/micbutton"
+        android:layout_toRightOf="@+id/mainalbumart"
+        android:layout_toEndOf="@+id/mainalbumart"
+        android:src="@drawable/muteoff"
+        android:onClick="mute"/>
+
+    <SeekBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/volumebar"
+        android:layout_below="@+id/backButton"
+        android:indeterminate="false"
+        android:layout_alignRight="@+id/mutebutton"
+        android:layout_alignEnd="@+id/mutebutton"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 
 </RelativeLayout>

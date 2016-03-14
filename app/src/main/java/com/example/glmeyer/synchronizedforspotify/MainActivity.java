@@ -5,8 +5,12 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -15,6 +19,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -38,6 +43,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,6 +59,12 @@ public class MainActivity extends Activity implements
     private static final String CLIENT_ID = "90eb86d7dd924772994f5134d9eb6cab";
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "http://griffinmeyer.com/callback/";
+    boolean muted;
+    AudioManager myAudioManager;
+    private SeekBar volumeSeekbar = null;
+    private ImageButton micButt;
+    private EditText searchText;
+    private final int REQ_CODE_SPEECH_INPUT = 100;
     boolean control = false;
 
     private static final UUID MY_UUID = UUID.fromString("5a6a493f-6feb-4145-8853-4593aa1b4f1c");
@@ -69,7 +81,18 @@ public class MainActivity extends Activity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        muted = false;
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        initControls();
+        searchText = (EditText) findViewById(R.id.searchbar);
+        myAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        micButt = (ImageButton) findViewById(R.id.micbutton);
+        micButt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                promptSpeechInput();
+            }
+        });
 
         mBluetooth = BluetoothAdapter.getDefaultAdapter();
         if(mBluetooth != null && mBluetooth.isEnabled()){
@@ -100,6 +123,74 @@ public class MainActivity extends Activity implements
                 return false;
             }
         });
+    }
+
+    private void initControls()
+    {
+        try
+        {
+            volumeSeekbar = (SeekBar)findViewById(R.id.volumebar);
+            volumeSeekbar.setMax(myAudioManager
+                    .getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+            volumeSeekbar.setProgress(myAudioManager
+                    .getStreamVolume(AudioManager.STREAM_MUSIC));
+
+
+            volumeSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener()
+            {
+                @Override
+                public void onStopTrackingTouch(SeekBar arg0)
+                {
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar arg0)
+                {
+                }
+
+                @Override
+                public void onProgressChanged(SeekBar arg0, int progress, boolean arg2) {
+                    myAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
+                            progress, 0);
+                }
+            });
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+            Toast.makeText(getApplicationContext(),
+                    getString(R.string.speech_not_supported),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void mute(View v) {
+        ImageButton m = (ImageButton) findViewById(R.id.mutebutton);
+        if (muted) {
+            myAudioManager.setStreamVolume(myAudioManager.STREAM_MUSIC, 5, 0);
+            muted = false;
+            m.setImageResource(R.drawable.muteoff);
+            return;
+
+        }else if (!muted) {
+            myAudioManager.setStreamVolume(myAudioManager.STREAM_MUSIC, 0, 0);
+            muted = true;
+            m.setImageResource(R.drawable.mutebutton);
+            return;
+        }
     }
 
     public void startBluetooth(View v){
@@ -142,6 +233,15 @@ String token = "";
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
         Log.d("SpotifyLog", resultCode + "");
+
+        if(requestCode == REQ_CODE_SPEECH_INPUT){
+            if (resultCode == RESULT_OK && null != intent) {
+
+                ArrayList<String> result = intent
+                        .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                searchText.setText(result.get(0));
+            }
+        }
 
         // Check if result comes from the correct activity
         if (requestCode == REQUEST_CODE) {
@@ -282,10 +382,6 @@ String token = "";
     public void playButton(View v) {
         if(control && connectedThread != null){
             connectedThread.write("playToggle".getBytes());
-            if(playing){
-
-            }
-
         }else {
             if (!songStarted) {
 
@@ -300,13 +396,13 @@ String token = "";
                             btn.setImageResource(R.drawable.playbutton);
                             mPlayer.pause();
                             playing = false;
-                            connectedThread.write("pause".getBytes());
+                            if(connectedThread != null){connectedThread.write("pause".getBytes());}
                         }
                         if (!playerState.playing) {
                             btn.setImageResource(R.drawable.pausebutton);
                             mPlayer.resume();
                             playing = true;
-                            connectedThread.write("resume".getBytes());
+                            if(connectedThread !=null){connectedThread.write("resume".getBytes());}
                         }
 
                     }
@@ -597,20 +693,6 @@ long currentTime;
                         mPlayer.seekToPosition(0);
                     }
 
-                    if(parts[0].equals("display")){
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                ImageButton btn = (ImageButton) findViewById(R.id.playButton);
-                                if(playing) {
-                                    btn.setImageResource(R.drawable.pausebutton);
-                                }else if(!playing){
-                                    btn.setImageResource(R.drawable.playbutton);
-                                }
-                            }
-                        });
-
-                    }
                     if(parts[0].equals("pause")){
                         runOnUiThread(new Runnable() {
                             @Override
@@ -713,4 +795,3 @@ long currentTime;
     }
 
 }
-
