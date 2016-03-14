@@ -60,12 +60,13 @@ public class MainActivity extends Activity implements
     // TODO: Replace with your redirect URI
     private static final String REDIRECT_URI = "http://griffinmeyer.com/callback/";
     boolean muted;
-    AudioManager myAudioManager;
+    AudioManager myAudioManager = null;
     private SeekBar volumeSeekbar = null;
     private ImageButton micButt;
     private EditText searchText;
     private final int REQ_CODE_SPEECH_INPUT = 100;
     boolean control = false;
+    private int currValue;
 
     private static final UUID MY_UUID = UUID.fromString("5a6a493f-6feb-4145-8853-4593aa1b4f1c");
 
@@ -79,13 +80,14 @@ public class MainActivity extends Activity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        currValue = myAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        myAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         muted = false;
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         initControls();
         searchText = (EditText) findViewById(R.id.searchbar);
-        myAudioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         micButt = (ImageButton) findViewById(R.id.micbutton);
         micButt.setOnClickListener(new View.OnClickListener() {
             @Override
