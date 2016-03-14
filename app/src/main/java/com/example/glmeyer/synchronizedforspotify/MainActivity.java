@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -66,10 +67,14 @@ public class MainActivity extends Activity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         mBluetooth = BluetoothAdapter.getDefaultAdapter();
         if(mBluetooth != null && mBluetooth.isEnabled()){
             ImageButton btButton = (ImageButton)findViewById(R.id.bluetoothbutton);
             btButton.setImageResource(R.drawable.bluetooth_enabled);
+            AcceptThread server = new AcceptThread();
+            Thread thread = new Thread(server);
+            thread.start();
         }
 
         AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
@@ -139,7 +144,10 @@ BluetoothDevice remoteDiv = null;
     }
 
     public void connectBluetooth(View v){
-        Intent connectBtIntent = new Intent(BluetoothAdapter.)
+        if(mBluetooth.isEnabled()){
+            Intent getDevice = new Intent(this, DeviceList.class);
+            startActivityForResult(getDevice, 69);
+        }
     }
 
     public void sendPlay(){
@@ -189,6 +197,25 @@ String token = "";
                     }
                 });
             }
+        }
+        if(requestCode == 69){
+            if(resultCode == Activity.RESULT_OK) {
+                TextView conDevice = (TextView)findViewById(R.id.connectedDevice);
+                conDevice.setText("Connecting...");
+                String macAdd = intent.getStringExtra("btMac");
+                String devName = intent.getStringExtra("btName");
+                BluetoothDevice dev;
+                dev = mBluetooth.getRemoteDevice(macAdd);
+                ConnectThread connectThread = new ConnectThread(dev);
+                Thread thread = new Thread(connectThread);
+                thread.start();
+            }
+        }
+        if(requestCode == 1){
+
+            AcceptThread server = new AcceptThread();
+            Thread thread = new Thread(server);
+            thread.start();
         }
 
         if(requestCode == 57){
@@ -432,6 +459,23 @@ String output = "";
         mPlayer.play("spotify:track:6FE2iI43OZnszFLuLtvvmg");
         paused = false;
     }
+    void connectedSocket(BluetoothSocket s){
+
+        final BluetoothSocket tempSocket = s;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                BluetoothDevice tempDevice = tempSocket.getRemoteDevice();
+                TextView conDevice = (TextView) findViewById(R.id.connectedDevice);
+                conDevice.setText(tempDevice.getName());
+            }
+        });
+
+
+        connectedThread = new ConnectedThread(s);
+        Thread thread = new Thread(connectedThread);
+        thread.start();;
+    }
 
 
 
@@ -462,7 +506,7 @@ String output = "";
                 // If a connection was accepted
                 if (socket != null) {
                     // Do work to manage the connection (in a separate thread)
-                    printSocket(socket);
+                    connectedSocket(socket);
                     try {
                         mmServerSocket.close();
                     } catch (IOException e) {
@@ -515,7 +559,7 @@ String output = "";
             }
 
             // Do work to manage the connection (in a separate thread)
-            printSocket(mmSocket);
+            connectedSocket(mmSocket);
         }
 
         /** Will cancel an in-progress connection, and close the socket */
@@ -550,6 +594,7 @@ String output = "";
         public void run() {
             byte[] buffer = new byte[1024];  // buffer store for the stream
             int bytes; // bytes returned from read()
+
 
             // Keep listening to the InputStream until an exception occurs
             while (true) {

@@ -9,36 +9,6 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.glmeyer.synchronizedforspotify.MainActivity">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Server"
-        android:onClick="logOut"
-        android:id="@+id/button3"
-        android:layout_marginTop="126dp"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Play Video"
-        android:id="@+id/button4"
-        android:onClick="playVideo"
-        android:layout_alignTop="@+id/button3"
-        android:layout_toLeftOf="@+id/button3"
-        android:layout_toStartOf="@+id/button3" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Client"
-        android:onClick="startClient"
-        android:id="@+id/button5"
-        android:layout_alignTop="@+id/button3"
-        android:layout_toRightOf="@+id/button3"
-        android:layout_toEndOf="@+id/button3" />
-
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
         android:layout_width="50dp"
@@ -75,9 +45,9 @@
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:id="@+id/mainalbumart"
-        android:layout_below="@+id/button3"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/emptyalbum" />
+        android:src="@drawable/emptyalbum"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
 
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
@@ -85,10 +55,10 @@
         android:layout_height="40dp"
         android:id="@+id/bluetoothbutton"
         android:src="@drawable/bluetooth_disabled"
-        android:layout_alignBottom="@+id/searchbar"
-        android:layout_toLeftOf="@+id/button4"
-        android:layout_toStartOf="@+id/button4"
-        android:onClick="startBluetooth"/>
+        android:onClick="startBluetooth"
+        android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/searchbar"
+        android:layout_toStartOf="@+id/searchbar" />
 
     <ImageButton
         style="?android:attr/borderlessButtonStyle"
@@ -149,8 +119,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/btConnect"
-        android:layout_above="@+id/button4"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/bluetooth_connect" />
+        android:src="@drawable/bluetooth_connect"
+        android:onClick="connectBluetooth"
+        android:layout_below="@+id/searchbutton"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="No Device Connected"
+        android:id="@+id/connectedDevice"
+        android:layout_below="@+id/btConnect"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>
