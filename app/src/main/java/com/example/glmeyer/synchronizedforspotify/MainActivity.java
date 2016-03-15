@@ -407,21 +407,20 @@ String token = "";
             TextView title = (TextView) findViewById(R.id.mainTitle);
             TextView artist = (TextView) findViewById(R.id.mainArtist);
             if (!playQueue.isEmpty()) {
-                Item returnedItem = playQueue.get(playQueue.size() - 1);
+                Item returnedItem = playQueue.get(playQueue.size()-1);
+                playQueue.remove(playQueue.size()-1);
                 if (connectedThread != null && returnedItem != null) {
                     //connectedThread.write(("play" + "-" + returnedItem.uri + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
                     if (control) {
                         connectedThread.write(("next" + "-" + returnedItem.uri + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
                     }
-                }
-                if (connectedThread != null) {
                     connectedThread.write(("playing" + "-" + returnedItem.album.images.get(1).url + "-" + returnedItem.name + "-" + returnedItem.artists.get(0).name).getBytes());
                 }
                 Picasso.with(this).load(returnedItem.album.images.get(1).url).into(albumArt);
                 btn.setImageResource(R.drawable.pausebutton);
                 title.setText(returnedItem.name);
                 artist.setText(returnedItem.artists.get(0).name);
-                playQueue.remove(playQueue.size() - 1);
+
                 if (playQueue.isEmpty()) {
                     title.setText("Chose a song");
                     artist.setText("");
